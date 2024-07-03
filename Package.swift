@@ -5,18 +5,22 @@ import PackageDescription
 
 let package = Package(
     name: "PythonConsole",
-    platforms: [.macOS(.v10_15), .iOS(.v13), .tvOS(.v13), .watchOS(.v6), .macCatalyst(.v13)],
+    platforms: [.macOS(.v14), .iOS(.v17), .visionOS(.v1)],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
             name: "PythonConsole",
-            targets: ["PythonConsole"]),
+            targets: ["PythonConsole"]
+        ),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/felfoldy/DebugTools", .upToNextMajor(from: "0.2.0")),
+        .package(url: "https://github.com/felfoldy/PythonTools", branch: "main")
     ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "PythonConsole"),
+            name: "PythonConsole",
+            dependencies: ["DebugTools", "PythonTools"]
+        ),
         .testTarget(
             name: "PythonConsoleTests",
             dependencies: ["PythonConsole"]
