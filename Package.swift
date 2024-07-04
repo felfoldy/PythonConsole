@@ -13,7 +13,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/felfoldy/DebugTools", .upToNextMajor(from: "0.2.0")),
+        .package(url: "https://github.com/felfoldy/DebugTools", .upToNextMajor(from: "0.2.2")),
         .package(url: "https://github.com/felfoldy/PythonTools", branch: "main")
     ],
     targets: [

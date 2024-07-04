@@ -7,12 +7,13 @@
 
 import DebugTools
 import PythonTools
+import Foundation
 
 extension PresentableLog {
     var id: String { String(describing: self) }
 }
 
-final class PythonStore: LogStore, OutputStream {
+final class PythonStore: LogStore, PythonTools.OutputStream {
     var outputBuffer: [String] = []
     var errorBuffer: [String] = []
     

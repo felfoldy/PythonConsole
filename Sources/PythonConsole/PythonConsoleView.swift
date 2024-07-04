@@ -14,6 +14,7 @@ public struct PythonConsoleView: View {
     @StateObject private var inputHandler = InputHandler()
     @State private var isPopoverPresented = false
     @State private var isRunDisabled = false
+    @FocusState private var isTextFieldFocused: Bool
     
     public init() {}
     
@@ -24,64 +25,68 @@ public struct PythonConsoleView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            HStack {
-                TextField(">>>", text: $inputHandler.input, axis: .vertical)
-                    .lineLimit(1...10)
-                    #if os(iOS)
-                    .textInputAutocapitalization(.never)
-                    .keyboardType(.asciiCapable)
-                    #elseif os(macOS)
-                    .onChange(of: inputHandler.completions) { _, newValue in
-                        isPopoverPresented = !newValue.isEmpty
-                    }
-                    .popover(isPresented: $isPopoverPresented,
-                             attachmentAnchor: .point(.topLeading)) {
-                        VStack {
-                            ForEach(inputHandler.completions, id: \.self) { completion in
-                                Button {
-                                    inputHandler.set(completion: completion)
-                                } label: {
-                                    let text = completion.replacingOccurrences(of: "\t", with: "tab")
-                                    Text(text)
-                                        .frame(minWidth: 200, alignment: .leading)
+            VStack(spacing: 0) {
+                HStack {
+                    TextField(">>>", text: $inputHandler.input, axis: .vertical)
+                        .focused($isTextFieldFocused)
+                        .lineLimit(1...10)
+#if os(iOS)
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.asciiCapable)
+#elseif os(macOS)
+                        .onChange(of: inputHandler.completions) { _, newValue in
+                            isPopoverPresented = !newValue.isEmpty
+                        }
+                        .popover(isPresented: $isPopoverPresented,
+                                 attachmentAnchor: .point(.topLeading)) {
+                            VStack {
+                                ForEach(inputHandler.completions, id: \.self) { completion in
+                                    Button {
+                                        inputHandler.set(completion: completion)
+                                    } label: {
+                                        let text = completion.replacingOccurrences(of: "\t", with: "tab")
+                                        Text(text)
+                                            .frame(minWidth: 200, alignment: .leading)
+                                    }
                                 }
                             }
+                            .padding(8)
+                            .buttonStyle(.borderless)
                         }
-                        .padding(8)
-                        .buttonStyle(.borderless)
-                    }
-                    #endif
-                    .disableAutocorrection(true)
-                    .onSubmit {
+#endif
+                                 .disableAutocorrection(true)
+                                 .onSubmit {
+                                     run()
+                                 }
+                    
+                    Button("Run") {
                         run()
                     }
-                
-                Button("Run") {
-                    run()
+                    .disabled(isRunDisabled)
                 }
-                .disabled(isRunDisabled)
-            }
-            .padding()
-            .background(.thinMaterial)
-        }
-        .toolbar {
-            ToolbarItem(placement: .keyboard) {
-                ScrollView(.horizontal) {
-                    HStack {
-                        ForEach(inputHandler.completions, id: \.self) { completion in
-                            let text = completion
-                                .replacingOccurrences(of: "\t", with: "tab")
-                            Button(text) {
-                                inputHandler.set(completion: completion)
+                .padding()
+                
+                #if os(iOS)
+                if !inputHandler.completions.isEmpty && isTextFieldFocused {
+                    ScrollView(.horizontal) {
+                        HStack {
+                            ForEach(inputHandler.completions, id: \.self) { completion in
+                                let text = completion
+                                    .replacingOccurrences(of: "\t", with: "tab")
+                                Button(text) {
+                                    inputHandler.set(completion: completion)
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(.primary)
                             }
-                            .buttonStyle(.bordered)
-                            .tint(.primary)
-                            
-                            Divider()
                         }
+                        .padding(4)
                     }
                 }
+                #endif
             }
+            .background(.thinMaterial)
+            .animation(.default, value: inputHandler.completions.isEmpty)
         }
         .scrollDismissesKeyboard(.automatic)
         .onAppear {
