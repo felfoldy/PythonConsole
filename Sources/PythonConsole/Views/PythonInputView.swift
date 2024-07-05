@@ -30,8 +30,9 @@ struct PythonInputView: View {
                     Text(">>>")
                         .foregroundStyle(.secondary)
                     
-                    Text(log.input)
+                    Text(log.input.replacingOccurrences(of: "\t", with: "    "))
                 }
+                .fontDesign(.monospaced)
                 
                 if let duration = log.duration {
                     Label(duration, systemImage: "timer")

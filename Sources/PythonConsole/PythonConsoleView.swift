@@ -24,16 +24,22 @@ public struct PythonConsoleView: View {
                 PythonInputView(log: inputLog)
             }
         }
+        .fontDesign(.monospaced)
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
                 HStack {
                     TextField(">>>", text: $inputHandler.input, axis: .vertical)
                         .focused($isTextFieldFocused)
                         .lineLimit(1...10)
-#if os(iOS)
+                        .fontDesign(.monospaced)
+                        .disableAutocorrection(true)
+                        .onSubmit {
+                            run()
+                        }
+                        #if os(iOS)
                         .textInputAutocapitalization(.never)
                         .keyboardType(.asciiCapable)
-#elseif os(macOS)
+                        #elseif os(macOS)
                         .onChange(of: inputHandler.completions) { _, newValue in
                             isPopoverPresented = !newValue.isEmpty
                         }
@@ -53,11 +59,7 @@ public struct PythonConsoleView: View {
                             .padding(8)
                             .buttonStyle(.borderless)
                         }
-#endif
-                                 .disableAutocorrection(true)
-                                 .onSubmit {
-                                     run()
-                                 }
+                        #endif
                     
                     Button("Run") {
                         run()
