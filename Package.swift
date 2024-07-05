@@ -14,12 +14,16 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/felfoldy/DebugTools", .upToNextMajor(from: "0.2.2")),
-        .package(url: "https://github.com/felfoldy/PythonTools", branch: "main")
+        .package(url: "https://github.com/felfoldy/PythonTools", branch: "main"),
+        .package(url: "https://github.com/raspu/Highlightr", .upToNextMajor(from: "2.2.0"))
     ],
     targets: [
         .target(
             name: "PythonConsole",
-            dependencies: ["DebugTools", "PythonTools"]
+            dependencies: ["DebugTools", "PythonTools", "Highlightr"],
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "PythonConsoleTests",

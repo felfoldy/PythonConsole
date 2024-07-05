@@ -7,10 +7,33 @@
 
 import SwiftUI
 import DebugTools
+import Highlightr
+
+extension Highlightr {
+    static let standard: Highlightr? = {
+        let highlightr = Highlightr()
+        highlightr?.setTheme(to: "ocean")
+        return highlightr
+    }()
+}
 
 struct PythonInputLog: PresentableLog {
     let input: String
     var executionTime: UInt64?
+    
+    let attributedCode: AttributedString
+    
+    init(input: String) {
+        self.input = input
+        
+        attributedCode = {
+            if let highlightr = Highlightr.standard,
+               let highlighted = highlightr.highlight(input, as: "python") {
+                return AttributedString(highlighted)
+            }
+            return AttributedString(input)
+        }()
+    }
     
     var duration: String? {
         guard let executionTime else { return nil }
@@ -30,7 +53,7 @@ struct PythonInputView: View {
                     Text(">>>")
                         .foregroundStyle(.secondary)
                     
-                    Text(log.input.replacingOccurrences(of: "\t", with: "    "))
+                    Text(log.attributedCode)
                 }
                 .fontDesign(.monospaced)
                 

@@ -33,9 +33,7 @@ public struct PythonConsoleView: View {
                         .lineLimit(1...10)
                         .fontDesign(.monospaced)
                         .disableAutocorrection(true)
-                        .onSubmit {
-                            run()
-                        }
+                        .onSubmit(run)
                         #if os(iOS)
                         .textInputAutocapitalization(.never)
                         .keyboardType(.asciiCapable)
@@ -61,15 +59,19 @@ public struct PythonConsoleView: View {
                         }
                         #endif
                     
-                    Button("Run") {
+                    Button {
                         run()
+                    } label: {
+                        Image.python?.resizable()
+                            .frame(width: 20, height: 20)
                     }
+                    .buttonStyle(.bordered)
                     .disabled(isRunDisabled)
                 }
-                .padding()
+                .padding(8)
                 
                 #if os(iOS)
-                if !inputHandler.completions.isEmpty && isTextFieldFocused {
+                if isTextFieldFocused {
                     ScrollView(.horizontal) {
                         HStack {
                             ForEach(inputHandler.completions, id: \.self) { completion in
@@ -78,11 +80,12 @@ public struct PythonConsoleView: View {
                                 Button(text) {
                                     inputHandler.set(completion: completion)
                                 }
-                                .buttonStyle(.bordered)
                                 .tint(.primary)
                             }
                         }
-                        .padding(4)
+                        .buttonStyle(.bordered)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
                     }
                 }
                 #endif
@@ -97,7 +100,7 @@ public struct PythonConsoleView: View {
     }
     
     func run() {
-        if isRunDisabled { return }
+        if isRunDisabled && inputHandler.input.isEmpty { return }
         isRunDisabled = true
         let code = inputHandler.input
         
