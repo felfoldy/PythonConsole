@@ -12,11 +12,16 @@ import Combine
 final class InputHandler: ObservableObject {
     @Published var input = ""
     @Published var completions: [String] = []
+    @Published var compiledCode: CompiledByteCode?
     
     init() {
-        $input.map(\.lastComponent)
+        let code = $input
             .debounce(for: .seconds(0.2), scheduler: RunLoop.main)
             .removeDuplicates()
+            .share()
+        
+        code
+            .map(\.lastComponent)
             .flatMap(maxPublishers: .max(1)) { input in
                 Future { promise in
                     Task {
@@ -24,13 +29,28 @@ final class InputHandler: ObservableObject {
                         
                         let filtered = results.filter { !$0.isEmpty }
 
-                        print(filtered)
                         promise(.success(filtered))
                     }
                 }
             }
             .receive(on: RunLoop.main)
             .assign(to: &$completions)
+        
+        let compiler = BytCodeCompiler.evaluationCompiler
+            .fallback(to: .fileCompiler)
+        
+        code.flatMap { source in
+            Future { promise in
+                Task {
+                    let code = CompilableCode(source: source)
+                    let compiledCode = try? await compiler.compile(code: code)
+                    
+                    promise(.success(compiledCode))
+                }
+            }
+        }
+        .receive(on: RunLoop.main)
+        .assign(to: &$compiledCode)
     }
     
     func set(completion: String) {

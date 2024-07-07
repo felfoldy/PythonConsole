@@ -17,11 +17,17 @@ final class PythonStore: LogStore, PythonTools.OutputStream {
     var outputBuffer: [String] = []
     var errorBuffer: [String] = []
     
-    func user(input: String) {
-        logs.append(PythonInputLog(input: input))
+    func user(id: UUID, input: String) {
+        logs.append(PythonInputLog(id: id, input: input))
     }
     
-    func finalize() {
+    func finalize(codeId: UUID, executionTime: UInt64) {
+        let inputLogs = logs.compactMap { $0 as? PythonInputLog }
+        
+        if let inputLog = inputLogs.last(where: { $0.id == codeId.uuidString }) {
+            inputLog.executionTime = executionTime
+        }
+        
         let output = outputBuffer
             .joined()
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -44,14 +50,6 @@ final class PythonStore: LogStore, PythonTools.OutputStream {
     
     func evaluation(result: String) {
         logs.append(LogEntry(message: result, level: .debug, location: "eval"))
-    }
-    
-    func execution(time: UInt64) {
-        if var inputLog = logs.last as? PythonInputLog {
-            logs.removeLast()
-            inputLog.executionTime = time
-            logs.append(inputLog)
-        }
     }
     
     func clear() {

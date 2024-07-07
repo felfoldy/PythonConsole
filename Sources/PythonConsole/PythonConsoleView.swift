@@ -62,11 +62,19 @@ public struct PythonConsoleView: View {
                     Button {
                         run()
                     } label: {
-                        Image.python?.resizable()
-                            .frame(width: 20, height: 20)
+                        if inputHandler.compiledCode != nil {
+                            Image.python?.resizable()
+                                .frame(width: 20, height: 20)
+                        } else {
+                            Image(systemName: "sparkles")
+                                .symbolRenderingMode(.multicolor)
+                                .resizable()
+                                .frame(width: 20, height: 20)
+                        }
                     }
                     .buttonStyle(.bordered)
                     .disabled(isRunDisabled)
+                    .animation(.default, value: inputHandler.compiledCode == nil)
                 }
                 .padding(8)
                 
@@ -100,17 +108,19 @@ public struct PythonConsoleView: View {
     }
     
     func run() {
-        if isRunDisabled && inputHandler.input.isEmpty { return }
-        isRunDisabled = true
+        guard let compiledCode = inputHandler.compiledCode else {
+            return
+        }
+
         let code = inputHandler.input
         
-        store.user(input: code)
+        store.user(id: compiledCode.id, input: code)
+
         let codeToRun = code
         inputHandler.input = ""
         
         Task {
-            try? await Interpreter.run(codeToRun)
-            isRunDisabled = false
+            try? await Interpreter.execute(compiledCode: compiledCode)
         }
     }
 }

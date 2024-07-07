@@ -17,13 +17,20 @@ extension Highlightr {
     }()
 }
 
-struct PythonInputLog: PresentableLog {
+@Observable
+class PythonInputLog: PresentableLog {
+    static func == (lhs: PythonInputLog, rhs: PythonInputLog) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    let id: String
     let input: String
     var executionTime: UInt64?
     
     let attributedCode: AttributedString
     
-    init(input: String) {
+    init(id: UUID, input: String) {
+        self.id = id.uuidString
         self.input = input
         
         attributedCode = {
@@ -44,7 +51,7 @@ struct PythonInputLog: PresentableLog {
 }
 
 struct PythonInputView: View {
-    let log: PythonInputLog
+    @State var log: PythonInputLog
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
