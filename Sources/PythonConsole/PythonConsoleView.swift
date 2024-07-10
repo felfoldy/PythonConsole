@@ -10,7 +10,7 @@ import DebugTools
 import PythonTools
 
 public struct PythonConsoleView: View {
-    @StateObject private var store = PythonStore(logFilter: .none)
+    @StateObject private var store = PythonStore()
     @StateObject private var inputHandler = InputHandler()
     @State private var isPopoverPresented = false
     @State private var isRunDisabled = false

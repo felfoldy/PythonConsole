@@ -18,12 +18,13 @@ extension Highlightr {
 }
 
 @Observable
-class PythonInputLog: PresentableLog {
+class PythonInputLog: SortableLog {
     static func == (lhs: PythonInputLog, rhs: PythonInputLog) -> Bool {
         lhs.id == rhs.id
     }
     
     let id: String
+    let date = Date.now
     let input: String
     var executionTime: UInt64?
     

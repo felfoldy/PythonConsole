@@ -5,6 +5,7 @@
 //  Created by Tibor Felföldy on 2024-07-03.
 //
 
+import LogTools
 import DebugTools
 import PythonTools
 import Foundation
@@ -17,8 +18,32 @@ final class PythonStore: LogStore, PythonTools.OutputStream {
     var outputBuffer: [String] = []
     var errorBuffer: [String] = []
     
+    @Published var pythonLogs: [any PresentableLog] = []
+    
+    init() {
+        super.init(logFilter: .none)
+
+        if DebugTools.sharedStore == nil {
+            DebugTools.initialize()
+            PythonLogger.config()
+        }
+
+        if let store = DebugTools.sharedStore {
+            logs = store.logs
+            
+            store.$logs.combineLatest($pythonLogs)
+                .map(+)
+                .map { logs in
+                    logs
+                        .compactMap { $0 as? (any SortableLog) }
+                        .sorted { $0.date < $1.date }
+                }
+                .assign(to: &$logs)
+        }
+    }
+    
     func user(id: UUID, input: String) {
-        logs.append(PythonInputLog(id: id, input: input))
+        pythonLogs.append(PythonInputLog(id: id, input: input))
     }
     
     func finalize(codeId: UUID, executionTime: UInt64) {
@@ -33,7 +58,7 @@ final class PythonStore: LogStore, PythonTools.OutputStream {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         
         if !output.isEmpty {
-            logs.append(LogEntry(message: output, level: .info, location: "stdout"))
+            pythonLogs.append(LogEntry(message: output, level: .info, location: "stdout"))
         }
         
         let errorMessage = errorBuffer
@@ -41,7 +66,7 @@ final class PythonStore: LogStore, PythonTools.OutputStream {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         
         if !errorMessage.isEmpty {
-            logs.append(LogEntry(message: errorMessage, level: .fault, location: "stderr"))
+            pythonLogs.append(LogEntry(message: errorMessage, level: .fault, location: "stderr"))
         }
         
         outputBuffer = []
@@ -49,10 +74,11 @@ final class PythonStore: LogStore, PythonTools.OutputStream {
     }
     
     func evaluation(result: String) {
-        logs.append(LogEntry(message: result, level: .debug, location: "eval"))
+        pythonLogs.append(LogEntry(message: result, level: .debug, location: "eval"))
     }
     
     func clear() {
-        logs = []
+        pythonLogs = []
+        DebugTools.sharedStore?.logs = []
     }
 }
