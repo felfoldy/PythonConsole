@@ -27,9 +27,9 @@ struct PythonLogger {
                         let _ = objs[0]
                         let logLevel = objs[1]
                         let message = String(objs[2])!
-                        let file = String(objs[3])!
-                        let function = String(objs[4])!
-                        let line = Int(objs[5])!
+                        let file = String(objs[3])
+                        let function = String(objs[4])
+                        let line = Int(objs[5])
                         
                         let levels: [LogLevel] = [
                             .debug,
@@ -39,11 +39,13 @@ struct PythonLogger {
                             .fault
                         ]
                         
-                        log.log(level: levels[Int(logLevel.value)!],
+                        let level = levels[Int(logLevel.value)!]
+                        
+                        log.log(level: level,
                                 message,
-                                file: file,
-                                function: function,
-                                line: line)
+                                file: file ?? "",
+                                function: function ?? "",
+                                line: line ?? 0)
                         
                         return Python.None
                     }

@@ -24,7 +24,9 @@ final class PythonStore: LogStore, PythonTools.OutputStream {
         super.init(logFilter: .none)
 
         if DebugTools.sharedStore == nil {
+            #if canImport(LogTools)
             DebugTools.initialize()
+            #endif
             PythonLogger.config()
         }
 
