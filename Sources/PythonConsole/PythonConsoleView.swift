@@ -10,13 +10,11 @@ import DebugTools
 import PythonTools
 
 public struct PythonConsoleView: View {
-    @StateObject private var store = PythonStore()
+    @ObservedObject var store: PythonStore
     @StateObject private var inputHandler = InputHandler()
     @State private var isPopoverPresented = false
     @State private var isRunDisabled = false
     @FocusState private var isTextFieldFocused: Bool
-    
-    public init() {}
     
     public var body: some View {
         GeometryReader { geo in
@@ -129,7 +127,6 @@ public struct PythonConsoleView: View {
         
         store.user(id: compiledCode.id, input: code)
 
-        let codeToRun = code
         inputHandler.input = ""
         
         Task {

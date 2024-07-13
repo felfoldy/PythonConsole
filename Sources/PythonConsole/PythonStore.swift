@@ -14,41 +14,42 @@ extension PresentableLog {
     var id: String { String(describing: self) }
 }
 
-final class PythonStore: LogStore, PythonTools.OutputStream {
-    var outputBuffer: [String] = []
-    var errorBuffer: [String] = []
+public final class PythonStore: LogStore, PythonTools.OutputStream {
+    public var outputBuffer: [String] = []
+    public var errorBuffer: [String] = []
     
-    @Published var pythonLogs: [any PresentableLog] = []
+    /// Logs added from `PythonStore`. All logs are combined with `attachedStore`.
+    @Published var innerLogs: [any PresentableLog] = []
     
-    init() {
+    private var attachedStore: LogStore?
+    
+    public init() {
         super.init(logFilter: .none)
-
-        if DebugTools.sharedStore == nil {
-            #if canImport(LogTools)
-            DebugTools.initialize()
-            #endif
-            PythonLogger.config()
-        }
-
-        if let store = DebugTools.sharedStore {
+    }
+    
+    public func attach(store: LogStore) {
+        attachedStore = store
+        
+        if logs.isEmpty {
             logs = store.logs
-            
-            store.$logs.combineLatest($pythonLogs)
-                .map(+)
-                .map { logs in
-                    logs
-                        .compactMap { $0 as? (any SortableLog) }
-                        .sorted { $0.date < $1.date }
-                }
-                .assign(to: &$logs)
         }
+
+        store.$logs
+            .combineLatest($innerLogs)
+            .map(+)
+            .map { logs in
+                logs
+                    .compactMap { $0 as? (any SortableLog) }
+                    .sorted { $0.date < $1.date }
+            }
+            .assign(to: &$logs)
     }
     
     func user(id: UUID, input: String) {
-        pythonLogs.append(PythonInputLog(id: id, input: input))
+        innerLogs.append(PythonInputLog(id: id, input: input))
     }
     
-    func finalize(codeId: UUID, executionTime: UInt64) {
+    public func finalize(codeId: UUID, executionTime: UInt64) {
         let inputLogs = logs.compactMap { $0 as? PythonInputLog }
         
         if let inputLog = inputLogs.last(where: { $0.id == codeId.uuidString }) {
@@ -60,7 +61,7 @@ final class PythonStore: LogStore, PythonTools.OutputStream {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         
         if !output.isEmpty {
-            pythonLogs.append(LogEntry(message: output, level: .info, location: "stdout"))
+            innerLogs.append(LogEntry(message: output, level: .info, location: "stdout"))
         }
         
         let errorMessage = errorBuffer
@@ -68,19 +69,19 @@ final class PythonStore: LogStore, PythonTools.OutputStream {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         
         if !errorMessage.isEmpty {
-            pythonLogs.append(LogEntry(message: errorMessage, level: .fault, location: "stderr"))
+            innerLogs.append(LogEntry(message: errorMessage, level: .fault, location: "stderr"))
         }
         
         outputBuffer = []
         errorBuffer = []
     }
     
-    func evaluation(result: String) {
-        pythonLogs.append(LogEntry(message: result, level: .debug, location: "eval"))
+    public func evaluation(result: String) {
+        innerLogs.append(LogEntry(message: result, level: .debug, location: "eval"))
     }
     
-    func clear() {
-        pythonLogs = []
-        DebugTools.sharedStore?.logs = []
+    public func clear() {
+        innerLogs = []
+        attachedStore?.logs = []
     }
 }

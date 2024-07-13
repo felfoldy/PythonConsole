@@ -8,8 +8,21 @@ public enum PythonConsole {
     public static func initialize() {
         #if canImport(UIKit)
         DebugTools.shakePresentedConsole = {
-            let consoleView = UIHostingController(rootView: PythonConsoleView())
-            return ConsoleViewController(base: consoleView)
+            // TODO: Move to a PythonLogTools interface lib.
+            PythonLogger.config()
+            
+            let store = PythonStore()
+            
+            // Attach logs from LogTools.
+            DebugTools.initialize()
+            if let logStore = DebugTools.sharedStore {
+                store.attach(store: logStore)
+            }
+            
+            let consoleView = PythonConsoleView(store: store)
+            
+            let hostingController = UIHostingController(rootView: consoleView)
+            return ConsoleViewController(base: hostingController)
         }
         #endif
     }
