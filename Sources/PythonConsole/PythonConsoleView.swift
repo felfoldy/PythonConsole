@@ -19,12 +19,25 @@ public struct PythonConsoleView: View {
     public init() {}
     
     public var body: some View {
-        ConsoleView(store: store) { log in
-            if let inputLog = log as? PythonInputLog {
-                PythonInputView(log: inputLog)
+        GeometryReader { geo in
+            let isPresented = geo.size.height < 44
+            
+            ConsoleView(store: store) { log in
+                if let inputLog = log as? PythonInputLog {
+                    PythonInputView(log: inputLog)
+                }
             }
+            .opacity(isPresented ? 0 : 1)
+            .fontDesign(.monospaced)
+            .safeAreaInset(edge: .top) {
+                if !isPresented {
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .frame(height: 16)
+                }
+            }
+            .animation(.default, value: isPresented)
         }
-        .fontDesign(.monospaced)
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
                 HStack {
