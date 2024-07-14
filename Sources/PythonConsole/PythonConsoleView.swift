@@ -11,7 +11,7 @@ import PythonTools
 
 public struct PythonConsoleView: View {
     @ObservedObject var store: PythonStore
-    @StateObject private var inputHandler = InputHandler()
+    @StateObject private var inputProcessor = InputProcessor()
     @State private var isPopoverPresented = false
     @State private var isRunDisabled = false
     @FocusState private var isTextFieldFocused: Bool
@@ -23,6 +23,10 @@ public struct PythonConsoleView: View {
             ConsoleView(store: store) { log in
                 if let inputLog = log as? PythonInputLog {
                     PythonInputView(log: inputLog)
+                }
+                
+                if let gptInputLog = log as? GenerativeInputLog {
+                    GenerativeInputView(log: gptInputLog)
                 }
             }
             .opacity(isPresented ? 0 : 1)
@@ -39,7 +43,7 @@ public struct PythonConsoleView: View {
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
                 HStack {
-                    TextField(">>>", text: $inputHandler.input, axis: .vertical)
+                    TextField(">>>", text: $inputProcessor.input, axis: .vertical)
                         .focused($isTextFieldFocused)
                         .lineLimit(1...10)
                         .fontDesign(.monospaced)
@@ -73,7 +77,7 @@ public struct PythonConsoleView: View {
                     Button {
                         run()
                     } label: {
-                        if inputHandler.compiledCode != nil {
+                        if inputProcessor.compiledCode != nil {
                             Image.python?.resizable()
                                 .frame(width: 20, height: 20)
                         } else {
@@ -85,7 +89,7 @@ public struct PythonConsoleView: View {
                     }
                     .buttonStyle(.bordered)
                     .disabled(isRunDisabled)
-                    .animation(.default, value: inputHandler.compiledCode == nil)
+                    .animation(.default, value: inputProcessor.compiledCode == nil)
                 }
                 .padding(8)
                 
@@ -93,11 +97,11 @@ public struct PythonConsoleView: View {
                 if isTextFieldFocused {
                     ScrollView(.horizontal) {
                         HStack {
-                            ForEach(inputHandler.completions, id: \.self) { completion in
+                            ForEach(inputProcessor.completions, id: \.self) { completion in
                                 let text = completion
                                     .replacingOccurrences(of: "\t", with: "tab")
                                 Button(text) {
-                                    inputHandler.set(completion: completion)
+                                    inputProcessor.set(completion: completion)
                                 }
                                 .tint(.primary)
                             }
@@ -110,7 +114,7 @@ public struct PythonConsoleView: View {
                 #endif
             }
             .background(.thinMaterial)
-            .animation(.default, value: inputHandler.completions.isEmpty)
+            .animation(.default, value: inputProcessor.completions.isEmpty)
         }
         .scrollDismissesKeyboard(.automatic)
         .onAppear {
@@ -119,18 +123,36 @@ public struct PythonConsoleView: View {
     }
     
     func run() {
-        guard let compiledCode = inputHandler.compiledCode else {
+        guard let compiledCode = inputProcessor.compiledCode else {
+            runGPT()
             return
         }
 
-        let code = inputHandler.input
+        let code = inputProcessor.input
         
         store.user(id: compiledCode.id, input: code)
-
-        inputHandler.input = ""
+        inputProcessor.input = ""
         
         Task {
             try? await Interpreter.execute(compiledCode: compiledCode)
+        }
+    }
+    
+    func runGPT() {
+        guard let agent = store.generativeAgent else {
+            return
+        }
+        
+        let processor = GenerativeProcessor(
+            store: store,
+            agent: agent,
+            prompt: inputProcessor.input
+        )
+        
+        inputProcessor.input = ""
+        
+        Task {
+            await processor.process()
         }
     }
 }

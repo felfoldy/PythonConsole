@@ -8,10 +8,23 @@
 import LogTools
 import DebugTools
 import PythonTools
+import SpeechTools
 import Foundation
 
 extension PresentableLog {
     var id: String { String(describing: self) }
+}
+
+struct GenerativeFilter: LogFilter {
+    func apply(logs: [any PresentableLog]) -> [any PresentableLog] {
+        logs.filter { log in
+            if let entry = log as? LogEntry,
+               entry.category == "GenerativeAgent" {
+                return false
+            }
+            return true
+        }
+    }
 }
 
 public final class PythonStore: LogStore, PythonTools.OutputStream {
@@ -19,15 +32,22 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
     public var errorBuffer: [String] = []
     
     /// Logs added from `PythonStore`. All logs are combined with `attachedStore`.
-    @Published var innerLogs: [any PresentableLog] = []
+    @MainActor
+    @Published
+    var innerLogs: [any PresentableLog] = []
     
     private var attachedStore: LogStore?
+    var generativeAgent: GenerativeAgent?
     
     public init() {
         super.init(logFilter: .none)
+        
+        $innerLogs.assign(to: &$logs)
     }
     
     public func attach(store: LogStore) {
+        guard attachedStore == nil else { return }
+
         attachedStore = store
         
         if logs.isEmpty {
@@ -45,12 +65,13 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
             .assign(to: &$logs)
     }
     
+    @MainActor
     func user(id: UUID, input: String) {
         innerLogs.append(PythonInputLog(id: id, input: input))
     }
     
     public func finalize(codeId: UUID, executionTime: UInt64) {
-        let inputLogs = logs.compactMap { $0 as? PythonInputLog }
+        let inputLogs = innerLogs.compactMap { $0 as? PythonInputLog }
         
         if let inputLog = inputLogs.last(where: { $0.id == codeId.uuidString }) {
             inputLog.executionTime = executionTime

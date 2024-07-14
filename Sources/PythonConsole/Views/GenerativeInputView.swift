@@ -16,10 +16,13 @@ extension SortableLog {
 
 @Observable
 class GenerativeInputLog: SortableLog {
+    let id: String
     let date = Date.now
     let input: String
+    var isRunning = true
     
-    init(input: String) {
+    init(id: UUID, input: String) {
+        self.id = id.uuidString
         self.input = input
     }
 }
@@ -28,15 +31,20 @@ struct GenerativeInputView: View {
     @State var log: GenerativeInputLog
     
     var body: some View {
-        Text(log.input)
+        Label(log.input, systemImage: "sparkles")
+            .font(.system(size: 14, design: .rounded))
+            .symbolEffect(.pulse, options: .repeating,
+                          isActive: log.isRunning)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(4)
             .overlay(alignment: .bottom) {
                 Divider()
             }
+            .symbolRenderingMode(.multicolor)
+            .animation(.default, value: log.isRunning)
     }
 }
 
 #Preview {
-    GenerativeInputView(log: GenerativeInputLog(input: "This will be the input"))
+    GenerativeInputView(log: GenerativeInputLog(id: UUID(), input: "This will be the input"))
 }

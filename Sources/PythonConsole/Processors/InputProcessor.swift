@@ -1,5 +1,5 @@
 //
-//  InputHandler.swift
+//  InputProcessor.swift
 //  
 //
 //  Created by Tibor Felföldy on 2024-07-03.
@@ -9,7 +9,8 @@ import PythonTools
 import Foundation
 import Combine
 
-final class InputHandler: ObservableObject {
+/// Handles user input, providing code completions, and compiling code.
+final class InputProcessor: ObservableObject {
     @Published var input = ""
     @Published var completions: [String] = []
     @Published var compiledCode: CompiledByteCode?
