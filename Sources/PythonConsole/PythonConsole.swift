@@ -31,8 +31,31 @@ public enum PythonConsole {
         #endif
     }
     
+    @MainActor
     public static func set(generativeAgent: GenerativeAgent) {
         store.generativeAgent = generativeAgent
-        store.logFilter = GenerativeFilter()
+    }
+    
+    @MainActor
+    public static func set(gpt model: GPTModel) {
+        let agent = GenerativeAgent(
+            model: model,
+            instructions: """
+            Help the user write in a python 3.11 interpreter.
+            
+            Always end your response with one single python code block what will be executed.
+            
+            For example:
+            User: print something
+            Assistant:
+            ```python
+            print("something")
+            ```
+            """
+        )
+
+        agent.isLoggingEnabled = false
+        
+        set(generativeAgent: agent)
     }
 }

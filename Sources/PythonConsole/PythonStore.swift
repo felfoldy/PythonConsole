@@ -15,18 +15,6 @@ extension PresentableLog {
     var id: String { String(describing: self) }
 }
 
-struct GenerativeFilter: LogFilter {
-    func apply(logs: [any PresentableLog]) -> [any PresentableLog] {
-        logs.filter { log in
-            if let entry = log as? LogEntry,
-               entry.category == "GenerativeAgent" {
-                return false
-            }
-            return true
-        }
-    }
-}
-
 public final class PythonStore: LogStore, PythonTools.OutputStream {
     public var outputBuffer: [String] = []
     public var errorBuffer: [String] = []
