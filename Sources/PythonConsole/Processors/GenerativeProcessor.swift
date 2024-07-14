@@ -28,11 +28,12 @@ struct GenerativeProcessor {
         
         do {
             let message = try await agent.generateResponse()
-            inputLog.isRunning = false
 
-            if case let .text(text) = message.content {
-                try await handleResponse(text: text)
+            if let lastUsage = await agent.usage.last {
+                inputLog.usage = .init(prompt: lastUsage.promptTokens, completion: lastUsage.completionTokens)
             }
+
+            try await handleResponse(text: message.text)
         } catch {
             log.fault(error.localizedDescription)
         }

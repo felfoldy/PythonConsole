@@ -85,23 +85,26 @@ struct PythonInputView: View {
                                 if component.id == 1 {
                                     ">>>"
                                 } else {
-                                    component.id
-                                        .formatted(.number.precision(
-                                            .integerAndFractionLength(
-                                                integer: 3,
-                                                fraction: 0
+                                    if component.id < 10 {
+                                        "  \(component.id)"
+                                    } else if component.id < 100 {
+                                        " \(component.id)"
+                                    } else {
+                                        component.id
+                                            .formatted(.number
+                                                .precision(.integerAndFractionLength(integer: 3, fraction: 0))
                                             )
-                                        ))
+                                    }
                                 }
                             }())
                             .font(.caption)
                             .foregroundStyle(.tertiary)
                             
-                            HStack(spacing: 0) {
+                            HStack(alignment: .top, spacing: 0) {
                                 ForEach(0 ..< component.indentation, id: \.self) { _ in
                                     Text("   ")
                                         .font(.system(size: 14))
-                                        .overlay(alignment: .trailing) {
+                                        .overlay(alignment: .leading) {
                                             Divider()
                                         }
                                 }
