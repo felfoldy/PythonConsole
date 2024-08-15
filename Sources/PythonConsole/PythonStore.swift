@@ -10,6 +10,7 @@ import DebugTools
 import PythonTools
 import SpeechTools
 import Foundation
+import Combine
 
 extension PresentableLog {
     var id: String { String(describing: self) }
@@ -27,10 +28,12 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
     private var attachedStore: LogStore?
     var generativeAgent: GenerativeAgent?
     
+    private var logSubscription: AnyCancellable?
+    
     public init() {
         super.init(logFilter: .none)
         
-        $innerLogs.assign(to: &$logs)
+        logSubscription = $innerLogs.assign(to: \.logs, on: self)
     }
     
     public func attach(store: LogStore) {
@@ -42,7 +45,7 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
             logs = store.logs
         }
 
-        store.$logs
+        logSubscription = store.$logs
             .combineLatest($innerLogs)
             .map(+)
             .map { logs in
@@ -50,7 +53,7 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
                     .compactMap { $0 as? (any SortableLog) }
                     .sorted { $0.date < $1.date }
             }
-            .assign(to: &$logs)
+            .assign(to: \.logs, on: self)
     }
     
     func user(id: UUID, input: String) {
@@ -69,7 +72,9 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         
         if !output.isEmpty {
-            innerLogs.append(LogEntry(message: output, level: .info, location: "stdout"))
+            Task { @MainActor in
+                innerLogs.append(LogEntry(message: output, level: .info, location: "stdout"))
+            }
         }
         
         let errorMessage = errorBuffer
@@ -77,7 +82,9 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         
         if !errorMessage.isEmpty {
-            innerLogs.append(LogEntry(message: errorMessage, level: .fault, location: "stderr"))
+            Task { @MainActor in
+                innerLogs.append(LogEntry(message: errorMessage, level: .fault, location: "stderr"))
+            }
         }
         
         outputBuffer = []
@@ -85,7 +92,9 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
     }
     
     public func evaluation(result: String) {
-        innerLogs.append(LogEntry(message: result, level: .debug, location: "eval"))
+        Task { @MainActor in
+            innerLogs.append(LogEntry(message: result, level: .debug, location: "eval"))
+        }
     }
     
     public func clear() {
