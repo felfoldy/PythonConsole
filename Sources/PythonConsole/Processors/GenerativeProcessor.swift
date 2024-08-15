@@ -108,7 +108,7 @@ struct GenerativeProcessor {
             store.user(id: code.id, input: python)
         }
         
-        let byteCode = try await BytCodeCompiler.fileCompiler
+        let byteCode = try await ByteCodeCompiler.fileCompiler
             .compile(code: code)
 
         try await Interpreter.execute(compiledCode: byteCode)

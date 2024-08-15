@@ -13,10 +13,10 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/felfoldy/LogTools", branch: "main"),
+        .package(url: "https://github.com/felfoldy/LogTools", .upToNextMajor(from: "0.9.0")),
         .package(url: "https://github.com/felfoldy/DebugTools", .upToNextMajor(from: "0.3.5")),
         .package(url: "https://github.com/felfoldy/PythonTools", .upToNextMajor(from: "0.2.0")),
-        .package(url: "https://github.com/felfoldy/SpeechTools", .upToNextMajor(from: "0.3.0")),
+        .package(url: "https://github.com/felfoldy/SpeechTools", .upToNextMajor(from: "0.4.0")),
         .package(url: "https://github.com/raspu/Highlightr", .upToNextMajor(from: "2.2.0"))
     ],
     targets: [

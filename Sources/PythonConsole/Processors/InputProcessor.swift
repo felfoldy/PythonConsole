@@ -37,7 +37,7 @@ final class InputProcessor: ObservableObject {
             .receive(on: RunLoop.main)
             .assign(to: &$completions)
         
-        let compiler = BytCodeCompiler.evaluationCompiler
+        let compiler = ByteCodeCompiler.evaluationCompiler
             .fallback(to: .fileCompiler)
         
         code.flatMap { source in

@@ -53,15 +53,15 @@ public struct PythonConsoleView: View {
                         .textInputAutocapitalization(.never)
                         .keyboardType(.asciiCapable)
                         #elseif os(macOS)
-                        .onChange(of: inputHandler.completions) { _, newValue in
+                        .onChange(of: inputProcessor.completions) { _, newValue in
                             isPopoverPresented = !newValue.isEmpty
                         }
                         .popover(isPresented: $isPopoverPresented,
                                  attachmentAnchor: .point(.topLeading)) {
                             VStack {
-                                ForEach(inputHandler.completions, id: \.self) { completion in
+                                ForEach(inputProcessor.completions, id: \.self) { completion in
                                     Button {
-                                        inputHandler.set(completion: completion)
+                                        inputProcessor.set(completion: completion)
                                     } label: {
                                         let text = completion.replacingOccurrences(of: "\t", with: "tab")
                                         Text(text)

@@ -5,6 +5,7 @@ import DebugTools
 import SpeechTools
 import SwiftUI
 
+@MainActor
 public enum PythonConsole {
     public static var store = PythonStore()
     
@@ -31,12 +32,10 @@ public enum PythonConsole {
         #endif
     }
     
-    @MainActor
     public static func set(generativeAgent: GenerativeAgent) {
         store.generativeAgent = generativeAgent
     }
     
-    @MainActor
     public static func set(gpt model: GPTModel) {
         let agent = GenerativeAgent(
             model: model,

@@ -15,12 +15,12 @@ extension PresentableLog {
     var id: String { String(describing: self) }
 }
 
+@MainActor
 public final class PythonStore: LogStore, PythonTools.OutputStream {
     public var outputBuffer: [String] = []
     public var errorBuffer: [String] = []
     
     /// Logs added from `PythonStore`. All logs are combined with `attachedStore`.
-    @MainActor
     @Published
     var innerLogs: [any PresentableLog] = []
     
@@ -53,7 +53,6 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
             .assign(to: &$logs)
     }
     
-    @MainActor
     func user(id: UUID, input: String) {
         innerLogs.append(PythonInputLog(id: id, input: input))
     }
