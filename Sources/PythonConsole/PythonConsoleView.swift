@@ -105,8 +105,15 @@ public struct PythonConsoleView: View {
 
                                 if inputProcessor.isPrimary(completion) {
                                     Button(text) {
+                                        let code = CompilableCode(source: completion)
+                                        store.user(id: code.id, input: completion)
+                                        
                                         Task {
-                                            try? await Interpreter.run(completion)
+                                            let byteCode = try await ByteCodeCompiler.fileCompiler
+                                                .compile(code: code)
+                                            
+                                            try await Interpreter.execute(compiledCode: byteCode)
+
                                             dismiss()
                                         }
                                     }
