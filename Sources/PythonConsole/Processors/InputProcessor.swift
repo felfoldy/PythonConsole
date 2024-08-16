@@ -61,6 +61,10 @@ final class InputProcessor: ObservableObject {
             input = input.dropLast(lastComponent.count) + completion
         }
     }
+    
+    func isPrimary(_ completion: String) -> Bool {
+        completion.hasPrefix(input) && completion.hasSuffix("()")
+    }
 }
 
 extension String {

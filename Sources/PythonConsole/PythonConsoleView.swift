@@ -16,6 +16,8 @@ public struct PythonConsoleView: View {
     @State private var isRunDisabled = false
     @FocusState private var isTextFieldFocused: Bool
     
+    @Environment(\.dismiss) private var dismiss
+    
     public var body: some View {
         GeometryReader { geo in
             let isPresented = geo.size.height < 44
@@ -100,13 +102,26 @@ public struct PythonConsoleView: View {
                             ForEach(inputProcessor.completions, id: \.self) { completion in
                                 let text = completion
                                     .replacingOccurrences(of: "\t", with: "tab")
-                                Button(text) {
-                                    inputProcessor.set(completion: completion)
+
+                                if inputProcessor.isPrimary(completion) {
+                                    Button(text) {
+                                        Task {
+                                            try? await Interpreter.run(completion)
+                                            dismiss()
+                                        }
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                } else {
+                                    Button(text) {
+                                        inputProcessor.set(completion: completion)
+                                    }
+                                    .tint(.primary)
+                                    .buttonStyle(.bordered)
                                 }
-                                .tint(.primary)
+                                
+                                
                             }
                         }
-                        .buttonStyle(.bordered)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                     }
