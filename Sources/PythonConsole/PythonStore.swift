@@ -100,8 +100,7 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
     public func clear() {
         Task { @MainActor in
             innerLogs = []
+            attachedStore?.logs = []
         }
-
-        attachedStore?.logs = []
     }
 }
