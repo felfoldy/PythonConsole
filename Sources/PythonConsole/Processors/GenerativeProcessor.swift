@@ -22,7 +22,7 @@ struct GenerativeProcessor {
         let inputLog = GenerativeInputLog(id: UUID(), input: prompt)
 
         await MainActor.run {
-            store.innerLogs.append(inputLog)
+            store.pythonLogs.append(inputLog)
             agent.history = consoleHistory
         }
         
@@ -41,7 +41,7 @@ struct GenerativeProcessor {
     
     @MainActor
     private var consoleHistory: [ChatMessage] {
-        store.innerLogs.compactMap { log in
+        store.pythonLogs.compactMap { log in
             if let pythonInput = log as? PythonInputLog {
                 return ChatMessage(.user, ">>> \(pythonInput.input)")
             }
@@ -94,7 +94,7 @@ struct GenerativeProcessor {
     
     @MainActor
     private func add(response text: String) {
-        store.innerLogs.append(
+        store.pythonLogs.append(
             LogEntry(message: text,
                      level: .notice,
                      location: "GPT")

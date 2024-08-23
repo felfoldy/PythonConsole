@@ -81,6 +81,7 @@ struct PythonInputView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(log.components) { component in
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            // >>> or line number.
                             Text({
                                 if component.id == 1 {
                                     ">>>"
@@ -99,8 +100,9 @@ struct PythonInputView: View {
                             }())
                             .font(.caption)
                             .foregroundStyle(.tertiary)
-                            
+
                             HStack(alignment: .top, spacing: 0) {
+                                // Indentation.
                                 ForEach(0 ..< component.indentation, id: \.self) { _ in
                                     Text("   ")
                                         .font(.system(size: 14))
@@ -109,13 +111,17 @@ struct PythonInputView: View {
                                         }
                                 }
                                 
+                                // Syntax highlighted code.
                                 Text(component.highlighted)
+                                    .textSelection(.enabled)
                             }
                         }
                     }
                 }
                 .fontDesign(.monospaced)
+                .textSelection(.disabled)
                 
+                // Execution time.
                 if let duration = log.duration {
                     Label(duration, systemImage: "timer")
                         .font(.caption)

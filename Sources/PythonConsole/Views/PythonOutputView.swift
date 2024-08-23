@@ -24,8 +24,14 @@ enum PythonOutputType {
 class PythonOutputLog: SortableLog {
     let id = UUID().uuidString
     let date = Date()
+    
+    /// Type to color code and separate output logs.
     let type: PythonOutputType
-    var isOpen = false
+
+    /// More than 10 lines of message will be truncated, unless this is true.
+    var isExpanded = false
+    
+    /// Updated when the output buffer changes.
     var message: String
     
     init(message: String, type: PythonOutputType) {
@@ -45,7 +51,7 @@ struct PythonOutputView: View {
         .overlay(alignment: .topTrailing) {
             if lines.count > 10 {
                 Button {
-                    log.isOpen.toggle()
+                    log.isExpanded.toggle()
                 } label: {
                     Image(systemName:
                             expandImageName)
@@ -55,7 +61,7 @@ struct PythonOutputView: View {
             }
         }
         .animation(.default, value: log.message)
-        .animation(.default, value: log.isOpen)
+        .animation(.default, value: log.isExpanded)
     }
     
     private var lines: [String] {
@@ -65,7 +71,7 @@ struct PythonOutputView: View {
     private var truncated: String {
         let message = log.message
         
-        if log.isOpen {
+        if log.isExpanded {
             return message
         }
 
@@ -79,7 +85,7 @@ struct PythonOutputView: View {
     }
     
     private var expandImageName: String {
-        if log.isOpen {
+        if log.isExpanded {
             "rectangle.compress.vertical"
         } else {
             "rectangle.expand.vertical"

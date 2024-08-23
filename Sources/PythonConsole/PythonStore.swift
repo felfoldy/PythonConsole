@@ -23,7 +23,7 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
     
     /// Logs added from `PythonStore`. All logs are combined with `attachedStore`.
     @Published
-    var innerLogs: [any PresentableLog] = []
+    var pythonLogs: [any PresentableLog] = []
     
     private var attachedStore: LogStore?
     var generativeAgent: GenerativeAgent?
@@ -33,7 +33,7 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
     public init() {
         super.init(logFilter: .none)
         
-        logSubscription = $innerLogs
+        logSubscription = $pythonLogs
             .map { $0.suffix(200) }
             .assign(to: \.logs, on: self)
     }
@@ -48,7 +48,7 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
         }
 
         logSubscription = store.$logs
-            .combineLatest($innerLogs)
+            .combineLatest($pythonLogs)
             .map(+)
             .map { logs in
                 logs
@@ -60,11 +60,11 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
     }
     
     @MainActor
-    func logOutput(message: String, type: PythonOutputType) {
-        if let last = innerLogs.last as? PythonOutputLog, last.type == type {
+    private func logOutput(message: String, type: PythonOutputType) {
+        if let last = pythonLogs.last as? PythonOutputLog, last.type == type {
             last.message = message
         } else {
-            innerLogs.append(PythonOutputLog(message: message, type: type))
+            pythonLogs.append(PythonOutputLog(message: message, type: type))
         }
     }
 
@@ -87,12 +87,12 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
     }
     
     func user(id: UUID, input: String) {
-        innerLogs.append(PythonInputLog(id: id, input: input))
+        pythonLogs.append(PythonInputLog(id: id, input: input))
     }
     
     public func finalize(codeId: UUID, executionTime: UInt64) {
         // Update execution time.
-        let inputLogs = innerLogs.compactMap { $0 as? PythonInputLog }
+        let inputLogs = pythonLogs.compactMap { $0 as? PythonInputLog }
         
         if let inputLog = inputLogs.last(where: { $0.id == codeId.uuidString }) {
             inputLog.executionTime = executionTime
@@ -107,16 +107,14 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
         let message = result.trimmingCharacters(in: .whitespacesAndNewlines)
         
         Task { @MainActor in
-            innerLogs.append(PythonOutputLog(
-                message: message,
-                type: .eval)
-            )
+            let log = PythonOutputLog(message: message, type: .eval)
+            pythonLogs.append(log)
         }
     }
     
     public func clear() {
         Task { @MainActor in
-            innerLogs = []
+            pythonLogs = []
             attachedStore?.logs = []
         }
     }
