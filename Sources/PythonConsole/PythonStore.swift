@@ -12,14 +12,14 @@ import SpeechTools
 import Foundation
 import Combine
 
-extension PresentableLog {
-    var id: String { String(describing: self) }
-}
-
-@MainActor
 public final class PythonStore: LogStore, PythonTools.OutputStream {
-    public var outputBuffer: [String] = []
-    public var errorBuffer: [String] = []
+    public var outputBuffer: [String] = [] {
+        didSet { outputUpdated() }
+    }
+
+    public var errorBuffer: [String] = [] {
+        didSet { errorUpdated() }
+    }
     
     /// Logs added from `PythonStore`. All logs are combined with `attachedStore`.
     @Published
@@ -33,7 +33,9 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
     public init() {
         super.init(logFilter: .none)
         
-        logSubscription = $innerLogs.assign(to: \.logs, on: self)
+        logSubscription = $innerLogs
+            .map { $0.suffix(200) }
+            .assign(to: \.logs, on: self)
     }
     
     public func attach(store: LogStore) {
@@ -52,8 +54,36 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
                 logs
                     .compactMap { $0 as? (any SortableLog) }
                     .sorted { $0.date < $1.date }
+                    .suffix(200)
             }
             .assign(to: \.logs, on: self)
+    }
+    
+    @MainActor
+    func logOutput(message: String, type: PythonOutputType) {
+        if let last = innerLogs.last as? PythonOutputLog, last.type == type {
+            last.message = message
+        } else {
+            innerLogs.append(PythonOutputLog(message: message, type: type))
+        }
+    }
+
+    func outputUpdated() {
+        let message = output
+        if message.isEmpty { return }
+        
+        Task { @MainActor in
+            logOutput(message: message, type: .out)
+        }
+    }
+    
+    func errorUpdated() {
+        let message = errorMessage
+        if message.isEmpty { return }
+        
+        Task { @MainActor in
+            logOutput(message: message, type: .err)
+        }
     }
     
     func user(id: UUID, input: String) {
@@ -61,39 +91,26 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
     }
     
     public func finalize(codeId: UUID, executionTime: UInt64) {
+        // Update execution time.
         let inputLogs = innerLogs.compactMap { $0 as? PythonInputLog }
         
         if let inputLog = inputLogs.last(where: { $0.id == codeId.uuidString }) {
             inputLog.executionTime = executionTime
         }
         
-        let output = outputBuffer
-            .joined()
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        if !output.isEmpty {
-            Task { @MainActor in
-                innerLogs.append(LogEntry(message: output, level: .info, location: "stdout"))
-            }
-        }
-        
-        let errorMessage = errorBuffer
-            .joined()
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        if !errorMessage.isEmpty {
-            Task { @MainActor in
-                innerLogs.append(LogEntry(message: errorMessage, level: .fault, location: "stderr"))
-            }
-        }
-        
+        // Clear buffers.
         outputBuffer = []
         errorBuffer = []
     }
     
     public func evaluation(result: String) {
+        let message = result.trimmingCharacters(in: .whitespacesAndNewlines)
+        
         Task { @MainActor in
-            innerLogs.append(LogEntry(message: result, level: .debug, location: "eval"))
+            innerLogs.append(PythonOutputLog(
+                message: message,
+                type: .eval)
+            )
         }
     }
     

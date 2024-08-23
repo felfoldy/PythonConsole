@@ -24,7 +24,7 @@ public enum PythonConsole {
                 store.attach(store: logStore)
             }
 
-            let consoleView = PythonConsoleView(store: store)
+            let consoleView = PythonConsoleView()
             
             let hostingController = UIHostingController(rootView: consoleView)
             return ConsoleViewController(base: hostingController)

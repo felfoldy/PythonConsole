@@ -18,6 +18,10 @@ public struct PythonConsoleView: View {
     
     @Environment(\.dismiss) private var dismiss
     
+    public init() {
+        store = PythonConsole.store
+    }
+    
     public var body: some View {
         GeometryReader { geo in
             let isPresented = geo.size.height < 44
@@ -27,12 +31,18 @@ public struct PythonConsoleView: View {
                     PythonInputView(log: inputLog)
                 }
                 
+                if let outputLog = log as? PythonOutputLog {
+                    PythonOutputView(log: outputLog)
+                }
+                
                 if let gptInputLog = log as? GenerativeInputLog {
                     GenerativeInputView(log: gptInputLog)
                 }
             }
+            .textSelection(.enabled)
             .opacity(isPresented ? 0 : 1)
             .fontDesign(.monospaced)
+            #if !os(macOS)
             .safeAreaInset(edge: .top) {
                 if !isPresented {
                     Rectangle()
@@ -40,6 +50,7 @@ public struct PythonConsoleView: View {
                         .frame(height: 16)
                 }
             }
+            #endif
             .animation(.default, value: isPresented)
         }
         .safeAreaInset(edge: .bottom) {
