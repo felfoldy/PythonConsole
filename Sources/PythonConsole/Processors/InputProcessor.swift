@@ -17,10 +17,21 @@ final class InputProcessor: ObservableObject {
     
     init() {
         let code = $input
+            .filter { !$0.isEmpty }
             .debounce(for: .seconds(0.2), scheduler: RunLoop.main)
             .removeDuplicates()
             .share()
         
+        let clear = $input
+            .filter(\.isEmpty)
+        
+        clear
+            .map { _ in [] }
+            .assign(to: &$completions)
+        
+        clear.map { _ in nil }
+            .assign(to: &$compiledCode)
+
         code
             .map(\.lastComponent)
             .flatMap(maxPublishers: .max(1)) { input in

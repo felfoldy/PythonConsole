@@ -13,13 +13,13 @@ public struct PythonConsoleView: View {
     @ObservedObject var store: PythonStore
     @StateObject private var inputProcessor = InputProcessor()
     @State private var isPopoverPresented = false
-    @State private var isRunDisabled = false
     @FocusState private var isTextFieldFocused: Bool
     
     @Environment(\.dismiss) private var dismiss
     
     public init() {
         store = PythonConsole.store
+        Interpreter.output(to: store)
     }
     
     public var body: some View {
@@ -101,7 +101,7 @@ public struct PythonConsoleView: View {
                         }
                     }
                     .buttonStyle(.bordered)
-                    .disabled(isRunDisabled)
+                    .disabled(inputProcessor.input.isEmpty)
                     .animation(.default, value: inputProcessor.compiledCode == nil)
                 }
                 .padding(8)
@@ -149,9 +149,11 @@ public struct PythonConsoleView: View {
             .background(.thinMaterial)
             .animation(.default, value: inputProcessor.completions.isEmpty)
         }
-        .scrollDismissesKeyboard(.automatic)
         .onAppear {
-            Interpreter.output(to: store)
+            PythonConsole.isPresentedSubject.send(true)
+        }
+        .onDisappear {
+            PythonConsole.isPresentedSubject.send(false)
         }
     }
     

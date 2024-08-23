@@ -4,17 +4,20 @@
 import DebugTools
 import SpeechTools
 import SwiftUI
+import Combine
 
 @MainActor
 public enum PythonConsole {
     public static var store = PythonStore()
     
+    public static let isPresentedSubject = CurrentValueSubject<Bool, Never>(false)
+    
     public static func initialize() {
+        // TODO: Move to a PythonLogTools interface lib.
+        PythonLogger.config()
+        
         #if canImport(UIKit)
         DebugTools.shakePresentedConsole = {
-            // TODO: Move to a PythonLogTools interface lib.
-            PythonLogger.config()
-            
             // Attach LogTools logs.
             if DebugTools.sharedStore == nil {
                 DebugTools.initialize()

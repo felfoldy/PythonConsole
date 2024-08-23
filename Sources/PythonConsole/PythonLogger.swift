@@ -16,9 +16,7 @@ struct PythonLogger {
     static func config() {
         Task {
             do {
-                try await Interpreter.load(bundle: .module)
-                
-                try await Interpreter.perform {
+                try await Interpreter.load(bundle: .module) {
                     let logger = Python.import("logtools")
                     let main = Python.import("__main__")
                     main.log = logger.Logger()

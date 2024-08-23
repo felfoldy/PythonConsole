@@ -67,7 +67,6 @@ struct PythonOutputView: View {
                 .contentTransition(.symbolEffect(.replace))
             }
         }
-        .animation(.default, value: log.message)
         .animation(.default, value: log.isExpanded)
     }
     
