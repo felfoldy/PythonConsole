@@ -7,6 +7,7 @@
 
 import SwiftUI
 import DebugTools
+import Combine
 
 enum PythonOutputType {
     case out, err, eval
@@ -20,8 +21,7 @@ enum PythonOutputType {
     }
 }
 
-@Observable
-class PythonOutputLog: SortableLog {
+class PythonOutputLog: SortableLog, ObservableObject {
     let id = UUID().uuidString
     let date = Date()
     
@@ -29,19 +29,26 @@ class PythonOutputLog: SortableLog {
     let type: PythonOutputType
 
     /// More than 10 lines of message will be truncated, unless this is true.
-    var isExpanded = false
-    
+    @Published var isExpanded = false
+
     /// Updated when the output buffer changes.
-    var message: String
+    @Published private(set) var message: String
+    
+    var messageSubject: CurrentValueSubject<String, Never>
     
     init(message: String, type: PythonOutputType) {
         self.message = message
         self.type = type
+        messageSubject = CurrentValueSubject(message)
+        
+        messageSubject
+            .throttle(for: .seconds(1), scheduler: RunLoop.main, latest: true)
+            .assign(to: &$message)
     }
 }
 
 struct PythonOutputView: View {
-    @State var log: PythonOutputLog
+    @StateObject var log: PythonOutputLog
     
     var body: some View {
         LogContainerView(tint: log.type.tint) {

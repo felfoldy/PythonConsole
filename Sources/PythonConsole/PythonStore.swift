@@ -62,7 +62,7 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
     @MainActor
     private func logOutput(message: String, type: PythonOutputType) {
         if let last = pythonLogs.last as? PythonOutputLog, last.type == type {
-            last.message = message
+            last.messageSubject.send(message)
         } else {
             pythonLogs.append(PythonOutputLog(message: message, type: type))
         }
