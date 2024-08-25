@@ -10,6 +10,7 @@ import Foundation
 import Combine
 
 /// Handles user input, providing code completions, and compiling code.
+@MainActor
 final class InputProcessor: ObservableObject {
     @Published var input = ""
     @Published var completions: [String] = []

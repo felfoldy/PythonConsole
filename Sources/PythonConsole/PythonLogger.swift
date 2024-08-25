@@ -5,7 +5,7 @@
 //  Created by Tibor Felföldy on 2024-07-09.
 //
 
-import LogTools
+@preconcurrency import LogTools
 import PythonTools
 import PythonKit
 import Python
