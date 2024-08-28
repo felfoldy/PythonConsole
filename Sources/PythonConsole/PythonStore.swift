@@ -13,11 +13,11 @@ import Foundation
 import Combine
 
 public final class PythonStore: LogStore, PythonTools.OutputStream {
-    public var outputBuffer: [String] = [] {
+    nonisolated(unsafe) public var outputBuffer: [String] = [] {
         didSet { outputUpdated() }
     }
 
-    public var errorBuffer: [String] = [] {
+    nonisolated(unsafe) public var errorBuffer: [String] = [] {
         didSet { errorUpdated() }
     }
     
@@ -68,7 +68,7 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
         }
     }
 
-    func outputUpdated() {
+    nonisolated func outputUpdated() {
         let message = output
         if message.isEmpty { return }
         
@@ -77,7 +77,7 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
         }
     }
     
-    func errorUpdated() {
+    nonisolated func errorUpdated() {
         let message = errorMessage
         if message.isEmpty { return }
         
@@ -90,12 +90,14 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
         pythonLogs.append(PythonInputLog(id: id, input: input))
     }
     
-    public func finalize(codeId: UUID, executionTime: UInt64) {
+    nonisolated public func finalize(codeId: UUID, executionTime: UInt64) {
         // Update execution time.
-        let inputLogs = pythonLogs.compactMap { $0 as? PythonInputLog }
-        
-        if let inputLog = inputLogs.last(where: { $0.id == codeId.uuidString }) {
-            inputLog.executionTime = executionTime
+        Task { @MainActor in
+            let inputLogs = pythonLogs.compactMap { $0 as? PythonInputLog }
+            
+            if let inputLog = inputLogs.last(where: { $0.id == codeId.uuidString }) {
+                inputLog.executionTime = executionTime
+            }
         }
         
         // Clear buffers.
@@ -103,7 +105,7 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
         errorBuffer = []
     }
     
-    public func evaluation(result: String) {
+    nonisolated public func evaluation(result: String) {
         let message = result.trimmingCharacters(in: .whitespacesAndNewlines)
         
         Task { @MainActor in
@@ -112,7 +114,7 @@ public final class PythonStore: LogStore, PythonTools.OutputStream {
         }
     }
     
-    public func clear() {
+    nonisolated public func clear() {
         Task { @MainActor in
             pythonLogs = []
             attachedStore?.logs = []
